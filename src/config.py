@@ -16,6 +16,7 @@ def _require(key: str) -> str:
             f"❌ Required environment variable '{key}' is not set. "
             f"Add it to HuggingFace Space Secrets."
         )
+    print(f"⚙️ [DEBUG] {key} length: {len(value.strip())}")
     return value.strip()
 
 
