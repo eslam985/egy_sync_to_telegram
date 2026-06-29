@@ -16,7 +16,7 @@ def _require(key: str) -> str:
             f"❌ Required environment variable '{key}' is not set. "
             f"Add it to HuggingFace Space Secrets."
         )
-    return value
+    return value.strip()
 
 
 @dataclass(frozen=True)
