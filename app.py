@@ -3,6 +3,19 @@ EgySync - Telegram Video Sync Bot
 Entry point for HuggingFace Spaces deployment.
 """
 
+import httpx
+
+# إجبار المكتبة عالمياً على إغلاق HTTP/2 وتفعيل HTTP/1.1 المستقر لمنع سقوط اتصال سوبابيس
+def _patch_httpx_client(client_class):
+    orig_init = client_class.__init__
+    def patched_init(self, *args, **kwargs):
+        kwargs["http2"] = False
+        orig_init(self, *args, **kwargs)
+    client_class.__init__ = patched_init
+
+_patch_httpx_client(httpx.Client)
+_patch_httpx_client(httpx.AsyncClient)
+
 import asyncio
 import logging
 import sys
