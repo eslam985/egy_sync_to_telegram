@@ -31,7 +31,7 @@ class SyncEngine:
         self._downloader = Downloader()
         self._splitter = VideoSplitter()
         self._client = TelegramClient(
-            StringSession(settings.TELEGRAM_SESSION),
+            StringSession("BAHWNsEAO_WjsTALmdqJS24eY0npnBmBb7QkTozM_PV3YBBHyAuPEToHPMFPdML0ZhBk6CNe1pPD9oPymvF6zB6eTkpGG-kbwEETrAk7lx-TNNoJx5sl0Sbp7_kwbL1pFVSzR2I0jEAa2ZatoEXH2MjcYw24HNaRbw5As45z2c3icP08RY9h7jtrzu8IijPhdE51OE77yz3HnDSRiBHg74LiF4K5rZQtbaFFKUMGLLB7EH4gRmq_hAM7qVb83NIm0u8aYYT9HO_jHYTd3IqnGLLi7_5biU4ZYXspz8fZC6_OZLyYb7YQpf5OPqNm-aIcpwTi7Nv7JGRGIp5T_kNHLSiQiX4m8QAAAABT7k3_AA"),
             settings.TELEGRAM_API_ID,
             settings.TELEGRAM_API_HASH,
             sequential_updates=True,
