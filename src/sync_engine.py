@@ -13,6 +13,7 @@ import os
 from typing import Optional
 
 from telethon import TelegramClient
+from telethon.sessions import StringSession
 
 from src.config import settings
 from src.database import Database
@@ -30,7 +31,7 @@ class SyncEngine:
         self._downloader = Downloader()
         self._splitter = VideoSplitter()
         self._client = TelegramClient(
-            settings.SESSION_FILE,
+            StringSession(settings.TELEGRAM_SESSION),
             settings.TELEGRAM_API_ID,
             settings.TELEGRAM_API_HASH,
             sequential_updates=True,
@@ -41,7 +42,7 @@ class SyncEngine:
     # ── Lifecycle ─────────────────────────────────────────────────────────────
 
     async def start(self) -> None:
-        await self._client.start(bot_token=settings.TELEGRAM_BOT_TOKEN)
+        await self._client.start()
         self._uploader = TelegramUploader(self._client)
         logger.info("✅ Telegram client connected.")
         await self._run_loop()

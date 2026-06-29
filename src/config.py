@@ -29,7 +29,7 @@ class Settings:
     # ── Telegram ──────────────────────────────────────────────────────────────
     TELEGRAM_API_ID: int = field(default_factory=lambda: int(_require("TELEGRAM_API_ID")))
     TELEGRAM_API_HASH: str = field(default_factory=lambda: _require("TELEGRAM_API_HASH"))
-    TELEGRAM_BOT_TOKEN: str = field(default_factory=lambda: _require("TELEGRAM_BOT_TOKEN"))
+    TELEGRAM_SESSION: str = field(default_factory=lambda: _require("TELEGRAM_SESSION"))
     TELEGRAM_TARGET_CHAT: str = field(default_factory=lambda: _require("TELEGRAM_TARGET_CHAT"))
 
     # ── Sync behaviour ────────────────────────────────────────────────────────

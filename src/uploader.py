@@ -8,6 +8,7 @@ import sys
 from typing import Optional
 
 from telethon import TelegramClient
+from telethon.sessions import StringSession
 
 from src.config import settings
 from src.logger import setup_logger
