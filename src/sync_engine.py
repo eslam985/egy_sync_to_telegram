@@ -31,7 +31,7 @@ class SyncEngine:
         self._downloader = Downloader()
         self._splitter = VideoSplitter()
         self._client = TelegramClient(
-            StringSession("BAHWNsEAO_WjsTALmdqJS24eY0npnBmBb7QkTozM_PV3YBBHyAuPEToHPMFPdML0ZhBk6CNe1pPD9oPymvF6zB6eTkpGG-kbwEETrAk7lx-TNNoJx5sl0Sbp7_kwbL1pFVSzR2I0jEAa2ZatoEXH2MjcYw24HNaRbw5As45z2c3icP08RY9h7jtrzu8IijPhdE51OE77yz3HnDSRiBHg74LiF4K5rZQtbaFFKUMGLLB7EH4gRmq_hAM7qVb83NIm0u8aYYT9HO_jHYTd3IqnGLLi7_5biU4ZYXspz8fZC6_OZLyYb7YQpf5OPqNm-aIcpwTi7Nv7JGRGIp5T_kNHLSiQiX4m8QAAAABT7k3_AA"),
+            StringSession(settings.TELEGRAM_SESSION),
             settings.TELEGRAM_API_ID,
             settings.TELEGRAM_API_HASH,
             sequential_updates=True,
@@ -82,8 +82,7 @@ class SyncEngine:
         fake_url = task["fake_url"]
 
         display_title = (
-            raw_title if ep_num in ("0", "1")
-            else f"{raw_title} - حلقة {ep_num}"
+            raw_title if ep_num in ("0", "1") else f"{raw_title} - حلقة {ep_num}"
         )
         temp_file = f"sync_{ep_id}.mp4"
 
@@ -92,10 +91,14 @@ class SyncEngine:
 
         try:
             # ── 1. Download ───────────────────────────────────────────────────
-            downloaded = await self._download_first_available(task["sources"], temp_file)
+            downloaded = await self._download_first_available(
+                task["sources"], temp_file
+            )
 
             if not downloaded:
-                logger.warning(f"⚠️  All sources failed for episode {ep_id}. Releasing lock.")
+                logger.warning(
+                    f"⚠️  All sources failed for episode {ep_id}. Releasing lock."
+                )
                 self._db.release_lock(fake_url)
                 self._failed_ids.add(ep_id)
                 return
@@ -125,9 +128,7 @@ class SyncEngine:
             if os.path.exists(temp_file):
                 os.remove(temp_file)
 
-    async def _download_first_available(
-        self, sources: list, dest_path: str
-    ) -> bool:
+    async def _download_first_available(self, sources: list, dest_path: str) -> bool:
         for source in sources:
             server = source.get("server_name", "unknown")
             logger.info(f"📡 Trying source: {server}")
@@ -172,7 +173,9 @@ class SyncEngine:
         )
 
         if not hf_url:
-            logger.warning(f"⚠️  No URL captured for part {part_index + 1}. Skipping DB update.")
+            logger.warning(
+                f"⚠️  No URL captured for part {part_index + 1}. Skipping DB update."
+            )
             return
 
         if is_first:
