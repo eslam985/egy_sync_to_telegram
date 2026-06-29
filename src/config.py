@@ -16,8 +16,8 @@ def _require(key: str) -> str:
             f"❌ Required environment variable '{key}' is not set. "
             f"Add it to HuggingFace Space Secrets."
         )
-    # تنظيف المسافات ثم علامات التنصيص المفردة والمزدوجة ثم المسافات مرة أخرى
-    cleaned_value = value.strip().strip("'\"").strip()
+    # إزالة أي مسافات أو أسطر جديدة نهائياً من داخل النص ومن أطرافه، ثم حذف علامات التنصيص
+    cleaned_value = "".join(value.split()).strip("'\"")
     print(f"⚙️ [DEBUG] {key} length: {len(cleaned_value)}")
     return cleaned_value
 
