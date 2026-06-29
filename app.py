@@ -6,7 +6,7 @@ Entry point for HuggingFace Spaces deployment.
 import asyncio
 import logging
 import sys
-
+import subprocess
 from src.sync_engine import SyncEngine
 from src.config import settings
 from src.logger import setup_logger
@@ -17,6 +17,10 @@ logger = setup_logger(__name__)
 async def main():
     logger.info("🚀 EgySync starting on HuggingFace Space...")
     logger.info(f"📋 Config: poll_interval={settings.POLL_INTERVAL_SECONDS}s, max_retries={settings.MAX_DOWNLOAD_RETRIES}")
+
+    
+    logger.info("🌐 Installing Playwright Chromium browser...")
+    subprocess.run(["python", "-m", "playwright", "install", "chromium"], check=True)
 
     engine = SyncEngine()
 
