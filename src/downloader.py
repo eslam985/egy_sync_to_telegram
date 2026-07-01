@@ -15,8 +15,11 @@ from src.logger import setup_logger
 logger = setup_logger(__name__)
 
 _USER_AGENT = (
-    "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 "
-    "(KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36"
+    "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Mobile Safari/537.36",
+    "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Mobile Safari/537.36",
+    "Mozilla/5.0 (Linux; Android 15; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Mobile Safari/537.36",
+    "Mozilla/5.0 (Linux; Android 13; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Mobile Safari/537.36",
+    "Mozilla/5.0 (Linux; Android 15; Pixel 9) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Mobile Safari/537.36",
 )
 _MIN_FILE_SIZE_BYTES = 5 * 1024 * 1024  # 5 MB
 
@@ -67,7 +70,9 @@ class Downloader:
 
                 for i in range(1, max_attempts + 1):
                     try:
-                        await page.wait_for_selector(btn, state="visible", timeout=10_000)
+                        await page.wait_for_selector(
+                            btn, state="visible", timeout=10_000
+                        )
 
                         if i == max_attempts // 2:
                             logger.info("🔄 MixDrop: mid-session reload...")
@@ -92,7 +97,9 @@ class Downloader:
                                 "?download" not in href and "mixdrop" not in href
                             )
                             if is_valid:
-                                logger.info(f"✅ MixDrop direct URL resolved: {href[:60]}...")
+                                logger.info(
+                                    f"✅ MixDrop direct URL resolved: {href[:60]}..."
+                                )
                                 return href
 
                         await page.wait_for_timeout(wait_ms)
@@ -100,7 +107,9 @@ class Downloader:
                     except Exception as e:
                         logger.debug(f"MixDrop attempt {i} error: {e}")
 
-                logger.warning("❌ MixDrop: could not resolve direct URL after all attempts.")
+                logger.warning(
+                    "❌ MixDrop: could not resolve direct URL after all attempts."
+                )
                 return None
 
             finally:
@@ -155,13 +164,20 @@ class Downloader:
                         resp.raise_for_status()
 
                         content_type = resp.headers.get("Content-Type", "").lower()
-                        if "video" not in content_type and "octet-stream" not in content_type:
-                            logger.warning(f"❌ Unexpected content-type: {content_type}")
+                        if (
+                            "video" not in content_type
+                            and "octet-stream" not in content_type
+                        ):
+                            logger.warning(
+                                f"❌ Unexpected content-type: {content_type}"
+                            )
                             return False
 
                         total = int(resp.headers.get("Content-Length", 0))
                         if 0 < total < _MIN_FILE_SIZE_BYTES:
-                            logger.warning(f"❌ File too small: {total / 1024 / 1024:.2f} MB")
+                            logger.warning(
+                                f"❌ File too small: {total / 1024 / 1024:.2f} MB"
+                            )
                             return False
 
                         with open(dest_path, "wb") as f, tqdm(
@@ -181,6 +197,7 @@ class Downloader:
                 logger.warning(f"⚠️  Download attempt {attempt} failed: {e}")
                 if attempt < retries:
                     import asyncio
+
                     await asyncio.sleep(5 * attempt)
 
         return False
