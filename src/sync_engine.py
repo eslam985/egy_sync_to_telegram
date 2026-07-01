@@ -129,7 +129,13 @@ class SyncEngine:
                 os.remove(temp_file)
 
     async def _download_first_available(self, sources: list, dest_path: str) -> bool:
-        for source in sources:
+        # إعادة ترتيب القائمة ديناميكياً لتقديم سيرفر streamtape أولاً إن وجد
+        sorted_sources = sorted(
+            sources,
+            key=lambda x: 0 if x.get("server_name", "").lower() == "streamtape" else 1
+        )
+        
+        for source in sorted_sources:
             server = source.get("server_name", "unknown")
             logger.info(f"📡 Trying source: {server}")
 
