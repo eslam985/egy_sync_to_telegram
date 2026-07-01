@@ -33,14 +33,14 @@ class Downloader:
         url = source["url"]
         name = source.get("server_name", "").lower()
 
-        if "mixdrop" in name or "mixdrop" in url:
-            return await self._resolve_mixdrop(url)
+        if "streamtape" in name or "streamtape" in url:
+            return await self._resolve_streamtape(url)
 
         if "archive.org" in url:
             return await self._resolve_archive(url)
-
-        if "streamtape" in name or "streamtape" in url:
-            return await self._resolve_streamtape(url)
+        
+        if "mixdrop" in name or "mixdrop" in url:
+            return await self._resolve_mixdrop(url)
 
         return url  # vk, etc.
 
