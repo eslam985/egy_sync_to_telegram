@@ -39,7 +39,10 @@ class Downloader:
         if "archive.org" in url:
             return await self._resolve_archive(url)
 
-        return url  # streamtape, vk, etc. — already direct
+        if "streamtape" in name or "streamtape" in url:
+            return await self._resolve_streamtape(url)
+
+        return url  # vk, etc.
 
     # ── MixDrop ───────────────────────────────────────────────────────────────
 
@@ -121,7 +124,61 @@ class Downloader:
 
             finally:
                 await browser.close()
+# ── Streamtape ────────────────────────────────────────────────────────────
 
+    async def _resolve_streamtape(self, embed_url: str) -> Optional[str]:
+        # تحويل الرابط إلى صيغة صفحة التحميل /v/ بدلاً من الـ Embed /e/
+        target = embed_url.replace("/e/", "/v/").replace("/f/", "/v/")
+        logger.info(f"🕵️  Streamtape Playwright: {target}")
+
+        async with async_playwright() as p:
+            browser = await p.chromium.launch(
+                headless=True,
+                args=["--disable-blink-features=AutomationControlled", "--no-sandbox"]
+            )
+            ctx = await browser.new_context(user_agent=random.choice(_USER_AGENTS))
+            page = await ctx.new_page()
+
+            try:
+                await page.goto(target, wait_until="domcontentloaded")
+
+                btn = "#downloadvideo"
+                await page.wait_for_selector(btn, state="visible", timeout=15_000)
+
+                # 1. الضغط على الزر مرة واحدة لتشغيل العداد الزمني (Counter) الخاص بالموقع
+                try:
+                    async with ctx.expect_page(timeout=5000) as new_page_info:
+                        await page.click(btn)
+                    # إغلاق نافذة الإنبثاق (Popup) الناتجة عن الضغطة الأولى إذا ظهرت
+                    ad_page = await new_page_info.value
+                    await ad_page.close()
+                except Exception:
+                    pass
+
+                await page.bring_to_front()
+
+                # 2. الانتظار لمدة 6 ثوانٍ حتى ينتهي العداد (5 ثوانٍ) ويقوم السكربت بحقن الرابط
+                logger.info("⏳ Streamtape: Waiting for 5s countdown to finish...")
+                await page.wait_for_timeout(6000)
+
+                # 3. استخراج الرابط النهائي من الخاصية href للزر
+                href = await page.get_attribute(btn, "href")
+
+                if href and "get_video" in href:
+                    href = href.strip()
+                    final_url = f"https:{href}" if href.startswith("//") else href
+                    logger.info(f"✅ Streamtape direct URL resolved: {final_url[:60]}...")
+                    return final_url
+
+                logger.warning("❌ Streamtape: Could not resolve direct URL from button after countdown.")
+                return None
+
+            except Exception as e:
+                logger.warning(f"❌ Streamtape extraction failed: {e}")
+                return None
+            finally:
+                await browser.close()
+                
     # ── Archive.org ───────────────────────────────────────────────────────────
 
     async def _resolve_archive(self, url: str) -> str:
