@@ -3,6 +3,7 @@ Downloader - handles direct downloads and MixDrop via Playwright.
 """
 
 import urllib.parse
+import random
 from typing import Optional
 
 import httpx
@@ -14,12 +15,14 @@ from src.logger import setup_logger
 
 logger = setup_logger(__name__)
 
-_USER_AGENT = (
+_USER_AGENTS = (
     "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Mobile Safari/537.36",
     "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Mobile Safari/537.36",
     "Mozilla/5.0 (Linux; Android 15; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Mobile Safari/537.36",
     "Mozilla/5.0 (Linux; Android 13; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Mobile Safari/537.36",
     "Mozilla/5.0 (Linux; Android 15; Pixel 9) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Mobile Safari/537.36",
+    "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 "
+    "(KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36",
 )
 _MIN_FILE_SIZE_BYTES = 5 * 1024 * 1024  # 5 MB
 
@@ -53,7 +56,7 @@ class Downloader:
 
         async with async_playwright() as p:
             browser = await p.chromium.launch(headless=True)
-            ctx = await browser.new_context(user_agent=_USER_AGENT)
+            ctx = await browser.new_context(user_agent=random.choice(_USER_AGENTS))
             page = await ctx.new_page()
 
             try:
@@ -158,7 +161,7 @@ class Downloader:
                 async with httpx.AsyncClient(
                     timeout=None,
                     follow_redirects=True,
-                    headers={"User-Agent": _USER_AGENT},
+                    headers={"User-Agent": random.choice(_USER_AGENTS)},
                 ) as client:
                     async with client.stream("GET", url) as resp:
                         resp.raise_for_status()
