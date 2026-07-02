@@ -142,6 +142,20 @@ class Downloader:
             try:
                 await page.goto(target, wait_until="domcontentloaded")
 
+                # 1. محاولة قنص الرابط مباشرة من العنصر المخفي لتفادي الكابتشا وتأخير الضغط
+                try:
+                    raw_link = await page.locator("#norobotlink").text_content(timeout=5000)
+                    if raw_link and "get_video" in raw_link:
+                        raw_link = raw_link.strip()
+                        if raw_link.startswith("//"):
+                            raw_link = f"https:{raw_link}"
+                        final_url = raw_link if "dl=1" in raw_link else f"{raw_link}&dl=1"
+                        logger.info(f"✅ Streamtape URL extracted directly from DOM: {final_url[:60]}...")
+                        return final_url
+                except Exception:
+                    logger.debug("Streamtape: Direct DOM extraction failed, falling back to click method...")
+
+                # 2. الطريقة الاحتياطية (في حال عدم وجود الرابط في الـ DOM مباشرة)
                 btn = "#downloadvideo"
                 await page.wait_for_selector(btn, state="visible", timeout=15_000)
 
