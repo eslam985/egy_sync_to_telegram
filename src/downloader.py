@@ -170,7 +170,11 @@ class Downloader:
                     logger.info(f"✅ Streamtape direct URL resolved: {final_url[:60]}...")
                     return final_url
 
-                logger.warning("❌ Streamtape: Could not resolve direct URL from button after countdown.")
+                # فحص محتوى الصفحة لمعرفة سبب الفشل بدقة
+                page_text = await page.inner_text("body")
+                is_dead = "video no longer available" in page_text.lower() or "not found" in page_text.lower()
+                
+                logger.warning(f"❌ Streamtape failed. Actual href: '{href}' | Is File Deleted: {is_dead}")
                 return None
 
             except Exception as e:
