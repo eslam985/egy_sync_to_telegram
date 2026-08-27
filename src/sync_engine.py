@@ -78,12 +78,14 @@ class SyncEngine:
     async def _process_task(self, task: dict) -> None:
         ep_id = task["episode_id"]
         raw_title = task.get("title", "Unknown")
-        ep_num = str(task.get("ep_num", "1"))
+        ep_num = task.get("ep_num") or task.get("episode_number", 1)
+        season_num = task.get("season_number") if task.get("season_number") is not None else task.get("season_num")
         fake_url = task["fake_url"]
 
-        display_title = (
-            raw_title if ep_num in ("0", "1") else f"{raw_title} - حلقة {ep_num}"
-        )
+        if season_num is not None:
+            display_title = f"{raw_title} - الموسم {season_num} - الحلقة {ep_num}"
+        else:
+            display_title = raw_title
         temp_file = f"sync_{ep_id}.mp4"
 
         logger.info("=" * 60)

@@ -23,7 +23,7 @@ class Database:
     def fetch_episode_page(self, offset: int) -> list:
         res = (
             self._client.table("episodes")
-            .select("id, episode_number, media_id, medias(title), links(server_name)")
+            .select("id, episode_number, media_id, seasons(season_number), medias(title), links(server_name)")
             .range(offset, offset + settings.DB_PAGE_SIZE - 1)
             .execute()
         )
@@ -164,11 +164,15 @@ class Database:
                     and "telegram_direct" not in str(s.get("server_name", "")).lower()
                 ]
 
+                season_data = ep.get("seasons")
+                season_num = season_data.get("season_number") if isinstance(season_data, dict) else None
+
                 return {
                     "episode_id": ep_id,
                     "sources": available_sources,
                     "title": (ep.get("medias") or {}).get("title", "Unknown"),
                     "ep_num": ep["episode_number"],
+                    "season_num": season_num,
                     "fake_url": fake_url,
                 }
 
