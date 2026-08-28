@@ -178,12 +178,25 @@ class SyncEngine:
         quality = f"720p - Part {part_index + 1}" if is_multi else "720p"
         caption = f"🎬 {display_title}{part_label} | ID: {episode_id}"
 
-        await self._ensure_connected()
-        hf_url = await self._uploader.upload_and_get_link(
-            file_path=part_path,
-            caption=caption,
-            episode_id=episode_id,
-        )
+        max_retries = 3
+        hf_url = None
+        for attempt in range(1, max_retries + 1):
+            try:
+                await self._ensure_connected()
+                hf_url = await self._uploader.upload_and_get_link(
+                    file_path=part_path,
+                    caption=caption,
+                    episode_id=episode_id,
+                )
+                break
+            except Exception as e:
+                logger.warning(f"⚠️ upload attempt {attempt}/{max_retries} failed for part {part_index + 1}: {e}")
+                if attempt == max_retries:
+                    raise e
+                await asyncio.sleep(5)
+                if self._client.is_connected():
+                    await self._client.disconnect()
+                await self._client.connect()
 
         if not hf_url:
             logger.warning(
