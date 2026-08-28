@@ -262,19 +262,21 @@ class Downloader:
                             )
                             return False
 
-                        min_step = int(total * 0.05) if total else None
+                        downloaded = 0
+                        last_percent = -5
 
-                        with open(dest_path, "wb") as f, tqdm(
-                            total=total or None,
-                            unit="B",
-                            unit_scale=True,
-                            desc=f"📥 {dest_path}",
-                            leave=False,
-                            miniters=min_step,
-                        ) as bar:
+                        with open(dest_path, "wb") as f:
                             async for chunk in resp.aiter_bytes(chunk_size=64 * 1024):
                                 f.write(chunk)
-                                bar.update(len(chunk))
+                                downloaded += len(chunk)
+                                
+                                if total:
+                                    percent = int((downloaded / total) * 100)
+                                    if percent - last_percent >= 5 or percent == 100:
+                                        dl_mb = downloaded // (1024 * 1024)
+                                        tot_mb = total // (1024 * 1024)
+                                        logger.info(f"📥 Downloading {dest_path}: {percent}% ({dl_mb} MB / {tot_mb} MB)")
+                                        last_percent = percent
 
                 return True
 
