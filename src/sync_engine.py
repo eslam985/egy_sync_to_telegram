@@ -51,7 +51,11 @@ class SyncEngine:
         if self._client.is_connected():
             await self._client.disconnect()
         logger.info("🔌 Telegram client disconnected.")
-
+        
+    async def _ensure_connected(self) -> None:
+        if not self._client.is_connected():
+            logger.warning("🔌 Telegram client disconnected during long operation. Reconnecting...")
+            await self._client.connect()
     # ── Main loop ─────────────────────────────────────────────────────────────
 
     async def _run_loop(self) -> None:
@@ -174,6 +178,7 @@ class SyncEngine:
         quality = f"720p - Part {part_index + 1}" if is_multi else "720p"
         caption = f"🎬 {display_title}{part_label} | ID: {episode_id}"
 
+        await self._ensure_connected()
         hf_url = await self._uploader.upload_and_get_link(
             file_path=part_path,
             caption=caption,
