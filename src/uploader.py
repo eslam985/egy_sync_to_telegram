@@ -4,11 +4,15 @@ Telegram uploader - handles sending files via Telethon.
 
 import asyncio
 import re
-import sys
+import math
+import os
+import random
 from typing import Optional
 
 from telethon import TelegramClient
 from telethon.sessions import StringSession
+from telethon.tl.functions.upload import SaveBigFilePartRequest
+from telethon.types import InputFileBig
 
 from src.config import settings
 from src.logger import setup_logger
@@ -30,6 +34,58 @@ class UploadProgressTracker:
             tot_mb = total // (1024 * 1024)
             logger.info(f"📤 Uploading: {percent}% ({curr_mb} MB / {tot_mb} MB)")
             self.last_percent = percent
+
+
+
+async def fast_upload_file(
+    client: TelegramClient,
+    file_path: str,
+    progress_callback=None,
+    connections: int = 4,
+) -> InputFileBig:
+    file_size = os.path.getsize(file_path)
+    part_size = 512 * 1024  # 512 KB per chunk
+    part_count = math.ceil(file_size / part_size)
+    file_id = random.getrandbits(63)
+
+    sem = asyncio.Semaphore(connections)
+    uploaded_bytes = 0
+    lock = asyncio.Lock()
+
+    async def upload_part(part_index: int):
+        nonlocal uploaded_bytes
+        async with sem:
+            with open(file_path, "rb") as f:
+                f.seek(part_index * part_size)
+                chunk = f.read(part_size)
+
+            for attempt in range(3):
+                try:
+                    await client(SaveBigFilePartRequest(
+                        file_id=file_id,
+                        file_part=part_index,
+                        file_total_parts=part_count,
+                        bytes=chunk,
+                    ))
+                    break
+                except Exception as e:
+                    if attempt == 2:
+                        raise e
+                    await asyncio.sleep(2)
+
+            async with lock:
+                uploaded_bytes += len(chunk)
+                if progress_callback:
+                    progress_callback(uploaded_bytes, file_size)
+
+    tasks = [upload_part(i) for i in range(part_count)]
+    await asyncio.gather(*tasks)
+
+    return InputFileBig(
+        id=file_id,
+        parts=part_count,
+        name=os.path.basename(file_path),
+    )
 
 
 class TelegramUploader:
@@ -54,11 +110,16 @@ class TelegramUploader:
 
         async with self._client.action(target, "document"):
             progress_tracker = UploadProgressTracker(step=5)
+            uploaded_file = await fast_upload_file(
+                self._client,
+                file_path,
+                progress_callback=progress_tracker,
+                connections=4,
+            )
             sent = await self._client.send_file(
                 "me",
-                file_path,
+                uploaded_file,
                 caption=caption,
-                progress_callback=progress_tracker,
             )
 
             await sent.forward_to(target)
