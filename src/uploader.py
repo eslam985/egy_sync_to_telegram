@@ -16,12 +16,20 @@ from src.logger import setup_logger
 logger = setup_logger(__name__)
 
 
-def _progress_callback(current: int, total: int) -> None:
-    percent = (current / total) * 100
-    curr_mb = current // (1024 * 1024)
-    tot_mb = total // (1024 * 1024)
-    sys.stdout.write(f"\r📤 Uploading: {percent:.1f}% ({curr_mb} MB / {tot_mb} MB)")
-    sys.stdout.flush()
+class UploadProgressTracker:
+    def __init__(self, step: int = 5):
+        self.step = step
+        self.last_percent = -step
+
+    def __call__(self, current: int, total: int) -> None:
+        if not total:
+            return
+        percent = int((current / total) * 100)
+        if percent - self.last_percent >= self.step or percent == 100:
+            curr_mb = current // (1024 * 1024)
+            tot_mb = total // (1024 * 1024)
+            logger.info(f"📤 Uploading: {percent}% ({curr_mb} MB / {tot_mb} MB)")
+            self.last_percent = percent
 
 
 class TelegramUploader:
@@ -45,13 +53,13 @@ class TelegramUploader:
         logger.info(f"📤 Uploading '{file_path}' to Telegram...")
 
         async with self._client.action(target, "document"):
+            progress_tracker = UploadProgressTracker(step=5)
             sent = await self._client.send_file(
                 "me",
                 file_path,
                 caption=caption,
-                progress_callback=_progress_callback,
+                progress_callback=progress_tracker,
             )
-            sys.stdout.write("\n")  # newline after progress bar
 
             await sent.forward_to(target)
             logger.info(f"⏳ Waiting {wait}s for bot to process...")

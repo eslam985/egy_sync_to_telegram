@@ -262,12 +262,15 @@ class Downloader:
                             )
                             return False
 
+                        min_step = int(total * 0.05) if total else None
+
                         with open(dest_path, "wb") as f, tqdm(
                             total=total or None,
                             unit="B",
                             unit_scale=True,
                             desc=f"📥 {dest_path}",
                             leave=False,
+                            miniters=min_step,
                         ) as bar:
                             async for chunk in resp.aiter_bytes(chunk_size=64 * 1024):
                                 f.write(chunk)
