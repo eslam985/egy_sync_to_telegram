@@ -10,6 +10,8 @@ SyncEngine - orchestrates the full pipeline:
 
 import asyncio
 import os
+import re
+
 from typing import Optional
 
 from telethon import TelegramClient
@@ -100,22 +102,38 @@ class SyncEngine:
                 await asyncio.sleep(interval)
                 continue
 
+
             ep_id = task["episode_id"]
+            media_id = task.get("media_id", ep_id)
             raw_title = task.get("title", "Unknown")
-            ep_num = task.get("ep_num") or task.get("episode_number", 1)
+            media_type = str(task.get("media_type", "movie")).lower()
+            fake_url = task["fake_url"]
+
+            ep_num = task.get("episode_number") or task.get("ep_num")
             season_num = (
                 task.get("season_number")
                 if task.get("season_number") is not None
                 else task.get("season_num")
             )
-            fake_url = task["fake_url"]
 
-            if season_num is not None:
-                display_title = f"{raw_title} - الموسم {season_num} - الحلقة {ep_num}"
+            # تنظيف العنوان من الرموز الخاصة
+            clean_title = re.sub(r'[^\w\s-]', '', raw_title).strip()
+            clean_title = re.sub(r'[-\s]+', '_', clean_title)
+
+            # 1. التنسيق للمسلسلات والبرامج (series / tv)
+            if media_type in ["series", "tv"]:
+                ep_val = ep_num if ep_num is not None else 1
+                if season_num is not None:
+                    temp_file = f"media_{media_id}-season_{season_num}-ep_{ep_val}-{clean_title}.mp4"
+                    display_title = f"{raw_title} | الموسم {season_num} - الحلقة {ep_val}"
+                else:
+                    temp_file = f"media_{media_id}-ep_{ep_val}-{clean_title}.mp4"
+                    display_title = f"{raw_title} | الحلقة {ep_val}"
+
+            # 2. التنسيق للأفلام (movie)
             else:
-                display_title = raw_title
-
-            temp_file = f"sync_{ep_id}.mp4"
+                temp_file = f"media_{media_id}-{clean_title}.mp4"
+                display_title = f"فيلم {raw_title}"
 
             logger.info("=" * 60)
             logger.info(f"📥 [Producer] Downloading Task: {display_title} (ep_id={ep_id})")
